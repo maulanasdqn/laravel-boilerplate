@@ -1,24 +1,22 @@
-FROM php:8.1-fpm-alpine3.16
-
-RUN docker-php-ext-install pdo pdo_mysql sockets
-RUN curl -sS https://getcomposer.org/installer​ | php -- \
-     --install-dir=/usr/local/bin --filename=composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+FROM php:8.1-fpm
+ENV USER=www
+ENV GROUP=www
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN apt-get update && apt-get install -y libpq-dev && docker-php-ext-install pdo pdo_pgsql
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 WORKDIR /var/www/
-ENV USER=docker
-ENV UID=12345
-ENV GID=23456
-RUN addgroup -g ${GID} ${USER} && adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "$(pwd)" \
-    --ingroup "$USER" \
-    --no-create-home \
-    --uid "$UID" \
-    "$USER"
-ADD . /var/www
-RUN chown -R ${USER}:${USER} /var/www
+RUN groupadd -g 1000 ${GROUP} && useradd -u 1000 -ms /bin/bash -g ${GROUP} ${USER}
+RUN chown -R ${USER} /var/www
 USER ${USER}
-COPY --chown=${USER}:${USER} . .
+COPY --chown=${USER}:${GROUP} . .
 EXPOSE 9000
 CMD ["php-fpm"]
