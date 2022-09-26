@@ -19,11 +19,11 @@ services:
         networks:
             app-network:
 
-    backend:
+    app:
         build:
-            context: .docker/php
+            context: .
             dockerfile: Dockerfile
-        container_name: backend
+        container_name: app
         volumes:
             - ./:/var/www
             - .docker/php/php.ini:/usr/local/etc/php/conf.d/local.ini
